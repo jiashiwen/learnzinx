@@ -16,8 +16,8 @@ type Server struct {
 	Ip string
 	//服务器端口
 	Port int
-	//server 注册的链接对应的处理业务
-	Router ziface.IRouter
+	//当前server的消息管理模块，用来绑定MsgID对应的api关系
+	MsgHandle ziface.IMsgHandle
 }
 
 func (s *Server) Start() {
@@ -32,6 +32,9 @@ func (s *Server) Start() {
 		utils.GlobalObject.MaxPackageSize)
 
 	go func() {
+		//开启消息队列及worker工作池
+		s.MsgHandle.StartWorkerPool()
+
 		addr, err := net.ResolveTCPAddr(s.IpVersion, fmt.Sprintf("%s:%d", s.Ip, s.Port))
 		if err != nil {
 			fmt.Println("resolve tcp addr error:", err)
@@ -42,7 +45,7 @@ func (s *Server) Start() {
 			fmt.Println("listen", s.IpVersion, "err", err)
 			return
 		}
-		fmt.Println("Start Zinx server sccesss", s.Name)
+
 		var cid uint32
 		cid = 0
 
@@ -52,7 +55,7 @@ func (s *Server) Start() {
 				fmt.Println("Accept err", err)
 				continue
 			}
-			dealConn := NewConnection(conn, cid, s.Router)
+			dealConn := NewConnection(conn, cid, s.MsgHandle)
 			cid++
 
 			//启动当前的链接业务处理
@@ -77,8 +80,8 @@ func (s *Server) Server() {
 
 }
 
-func (s *Server) AddRouter(router ziface.IRouter) {
-	s.Router = router
+func (s *Server) AddRouter(msgID uint32, router ziface.IRouter) {
+	s.MsgHandle.AddRouter(msgID, router)
 	fmt.Println("Add Router succ")
 }
 
@@ -92,7 +95,7 @@ func NewServer(name string) ziface.IServer {
 		IpVersion: "tcp4",
 		Ip:        utils.GlobalObject.Host,
 		Port:      utils.GlobalObject.TcpPort,
-		Router:    nil,
+		MsgHandle: NewMsgHandle(),
 	}
 
 	return s

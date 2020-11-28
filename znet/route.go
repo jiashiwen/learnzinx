@@ -7,7 +7,7 @@ type BaseRouter struct {
 }
 
 //处理业务之前的
-func (br *BaseRouter) HooPreHandle(request ziface.IRequest) {}
+func (br *BaseRouter) PreHandle(request ziface.IRequest) {}
 
 //处理conn业务的主方法Hook
 func (br *BaseRouter) Handle(request ziface.IRequest) {}

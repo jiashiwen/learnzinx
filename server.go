@@ -11,36 +11,36 @@ type PingRouter struct {
 	znet.BaseRouter
 }
 
-//test PreHandle
-func (p *PingRouter) PreHandle(request ziface.IRequest) {
-	fmt.Println("Call Router PreHandle ...")
-	_, err := request.GetConnection().GetTcpConnection().Write([]byte("befor handele \n"))
-	if err != nil {
-		fmt.Println("call back before ping error")
-	}
-
+//hellozinx 自定义路由
+type HelloZinx struct {
+	znet.BaseRouter
 }
 
 //test Handle
 func (p *PingRouter) Handle(request ziface.IRequest) {
 	fmt.Println("Call Router Handle ...")
-	_, err := request.GetConnection().GetTcpConnection().Write([]byte("handele \n"))
+	//读取客户端数据，再回写ping..ping..ping..
+	fmt.Println("recv from client:msgID=", request.GetMsgID(), ",data=", string(request.GetData()))
+	err := request.GetConnection().SendMsg(1, []byte("ping..ping..ping.."))
 	if err != nil {
-		fmt.Println("call back ping error")
+		fmt.Println(err)
 	}
 }
 
-//test PostHandle
-func (p *PingRouter) PostHandle(request ziface.IRequest) {
-	fmt.Println("Call Router Post Handle ...")
-	_, err := request.GetConnection().GetTcpConnection().Write([]byte("after handele\n"))
+//hellozinx Handle
+func (h *HelloZinx) Handle(request ziface.IRequest) {
+	fmt.Println("Call Router Handle ...")
+	//读取客户端数据，再回写ping..ping..ping..
+	fmt.Println("recv from client:msgID=", request.GetMsgID(), ",data=", string(request.GetData()))
+	err := request.GetConnection().SendMsg(1, []byte("Hello zinx"))
 	if err != nil {
-		fmt.Println("call back after ping error")
+		fmt.Println(err)
 	}
 }
 
 func main() {
 	s := znet.NewServer("myzinx")
-	s.AddRouter(&PingRouter{})
+	s.AddRouter(0, &PingRouter{})
+	s.AddRouter(1, &HelloZinx{})
 	s.Server()
 }
